@@ -111,7 +111,7 @@ gtk_box_gadget_measure_child (GObject        *child,
     }
 }
 
-static void
+static gint
 gtk_box_gadget_distribute (GtkBoxGadget     *gadget,
                            gint              for_size,
                            gint              size,
@@ -140,13 +140,13 @@ gtk_box_gadget_distribute (GtkBoxGadget     *gadget,
   if G_UNLIKELY (size < 0)
     {
       g_critical ("%s: assertion 'size >= 0' failed in %s", G_STRFUNC, G_OBJECT_TYPE_NAME (gtk_css_gadget_get_owner (GTK_CSS_GADGET (gadget))));
-      return;
+      return 0;
     }
 
   size = gtk_distribute_natural_allocation (size, priv->children->len, sizes);
 
   if (size <= 0 || n_expand == 0)
-    return;
+    return MAX (0, size);
 
   for (i = 0 ; i < priv->children->len; i++)
     {
@@ -162,6 +162,7 @@ gtk_box_gadget_distribute (GtkBoxGadget     *gadget,
       n_expand--;
     }
 
+  return size;
 }
 
 static void
@@ -389,7 +390,14 @@ gtk_box_gadget_allocate (GtkCssGadget        *gadget,
 
   if (priv->orientation == GTK_ORIENTATION_HORIZONTAL)
     {
-      gtk_box_gadget_distribute (GTK_BOX_GADGET (gadget), allocation->height, allocation->width, sizes);
+      int extra = gtk_box_gadget_distribute (GTK_BOX_GADGET (gadget), allocation->height, allocation->width, sizes);
+
+      /* put empty space at the front */
+      if (gtk_widget_get_direction (gtk_css_gadget_get_owner (gadget)) == GTK_TEXT_DIR_RTL)
+        {
+          child_allocation.x += extra;
+          child_allocation.width -= extra;
+        }
 
       if (priv->allocate_reverse)
         child_allocation.x = allocation->x + allocation->width;
