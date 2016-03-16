@@ -399,3 +399,136 @@ gtk_css_win32_size_value_parse (GtkCssParser           *parser,
 
   return result;
 }
+
+GtkCssValue *
+gtk_css_win32_size_value_token_parse (GtkCssTokenSource      *source,
+                                      GtkCssNumberParseFlags  flags)
+{
+  GtkWin32Theme *theme;
+  const GtkCssToken *token;
+  GtkCssValue *result;
+  guint type;
+
+  token = gtk_css_token_source_get_token (source);
+  for (type = 0; type < G_N_ELEMENTS(css_value_names); type++)
+    {
+      if (gtk_css_token_is_function (token, css_value_names[type]))
+        break;
+    }
+
+  if (type >= G_N_ELEMENTS(css_value_names))
+    {
+      gtk_css_token_source_error (source, "Not a win32 size value");
+      gtk_css_token_source_consume_all (source);
+      return NULL;
+    }
+
+  theme = gtk_win32_theme_token_parse (source);
+  if (theme == NULL)
+    return NULL;
+
+  gtk_css_token_source_consume_whitespace (source);
+  token = gtk_css_token_source_get_token (source);
+  if (!gtk_css_token_is (token, GTK_CSS_TOKEN_COMMA))
+    {
+      gtk_win32_theme_unref (theme);
+      gtk_css_token_source_error (source, "Expected ','");
+      gtk_css_token_source_consume_all (source);
+      return NULL;
+    }
+  gtk_css_token_source_consume_token (source);
+  gtk_css_token_source_consume_whitespace (source);
+
+  result = gtk_css_win32_size_value_new (1.0, theme, type);
+  gtk_win32_theme_unref (theme);
+
+  switch (result->type)
+    {
+    case GTK_WIN32_SIZE:
+      token = gtk_css_token_source_get_token (source);
+      if (gtk_css_token_is (token, GTK_CSS_TOKEN_IDENT))
+        {
+          result->val.size.id = gtk_win32_get_sys_metric_id_for_name (token->string.string);
+          if (result->val.size.id == -1)
+            {
+              gtk_css_token_source_error (source, "'%s' is not a name for a win32 metric.", token->string.string);
+              gtk_css_token_source_consume_all (source);
+              _gtk_css_value_unref (result);
+              return NULL;
+            }
+          gtk_css_token_source_consume_token (source);
+        }
+      else if (gtk_css_token_is (token, GTK_CSS_TOKEN_INTEGER))
+        {
+          result->val.size.id = token->number.number;
+          gtk_css_token_source_consume_token (source);
+        }
+      else
+        {
+          _gtk_css_value_unref (result);
+          gtk_css_token_source_error (source, "Expected an integer ID");
+          gtk_css_token_source_consume_all (source);
+          return NULL;
+        }
+      break;
+
+    case GTK_WIN32_PART_WIDTH:
+    case GTK_WIN32_PART_HEIGHT:
+    case GTK_WIN32_PART_BORDER_TOP:
+    case GTK_WIN32_PART_BORDER_RIGHT:
+    case GTK_WIN32_PART_BORDER_BOTTOM:
+    case GTK_WIN32_PART_BORDER_LEFT:
+      token = gtk_css_token_source_get_token (source);
+      if (!gtk_css_token_is (token, GTK_CSS_TOKEN_INTEGER))
+        {
+          _gtk_css_value_unref (result);
+          gtk_css_token_source_error (source, "Expected an integer part ID");
+          gtk_css_token_source_consume_all (source);
+          return NULL;
+        }
+      result->val.part.part = token->number.number;
+      gtk_css_token_source_consume_token (source);
+      gtk_css_token_source_consume_whitespace (source);
+
+      token = gtk_css_token_source_get_token (source);
+      if (!gtk_css_token_is (token, GTK_CSS_TOKEN_COMMA))
+        {
+          _gtk_css_value_unref (result);
+          gtk_css_token_source_error (source, "Expected ','");
+          gtk_css_token_source_consume_all (source);
+          return NULL;
+        }
+      gtk_css_token_source_consume_token (source);
+      gtk_css_token_source_consume_whitespace (source);
+
+      token = gtk_css_token_source_get_token (source);
+      if (!gtk_css_token_is (token, GTK_CSS_TOKEN_INTEGER))
+        {
+          _gtk_css_value_unref (result);
+          gtk_css_token_source_error (source, "Expected an integer state ID");
+          gtk_css_token_source_consume_all (source);
+          return NULL;
+        }
+      result->val.part.state = token->number.number;
+      gtk_css_token_source_consume_token (source);
+      break;
+
+    default:
+      g_assert_not_reached ();
+      _gtk_css_value_unref (result);
+      result = NULL;
+      break;
+    }
+
+  gtk_css_token_source_consume_whitespace (source);
+  if (!gtk_css_token_is (token, GTK_CSS_TOKEN_CLOSE_PARENS))
+    {
+      _gtk_css_value_unref (result);
+      gtk_css_token_source_error (source, "Expected ')'");
+      gtk_css_token_source_consume_all (source);
+      return NULL;
+    }
+  gtk_css_token_source_consume_token (source);
+
+  return result;
+}
