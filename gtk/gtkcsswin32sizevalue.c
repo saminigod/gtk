@@ -427,7 +427,6 @@ gtk_css_win32_size_value_token_parse (GtkCssTokenSource      *source,
   if (theme == NULL)
     return NULL;
 
-  gtk_css_token_source_consume_whitespace (source);
   token = gtk_css_token_source_get_token (source);
   if (!gtk_css_token_is (token, GTK_CSS_TOKEN_COMMA))
     {
@@ -437,7 +436,6 @@ gtk_css_win32_size_value_token_parse (GtkCssTokenSource      *source,
       return NULL;
     }
   gtk_css_token_source_consume_token (source);
-  gtk_css_token_source_consume_whitespace (source);
 
   result = gtk_css_win32_size_value_new (1.0, theme, type);
   gtk_win32_theme_unref (theme);
@@ -488,7 +486,6 @@ gtk_css_win32_size_value_token_parse (GtkCssTokenSource      *source,
         }
       result->val.part.part = token->number.number;
       gtk_css_token_source_consume_token (source);
-      gtk_css_token_source_consume_whitespace (source);
 
       token = gtk_css_token_source_get_token (source);
       if (!gtk_css_token_is (token, GTK_CSS_TOKEN_COMMA))
@@ -499,7 +496,6 @@ gtk_css_win32_size_value_token_parse (GtkCssTokenSource      *source,
           return NULL;
         }
       gtk_css_token_source_consume_token (source);
-      gtk_css_token_source_consume_whitespace (source);
 
       token = gtk_css_token_source_get_token (source);
       if (!gtk_css_token_is (token, GTK_CSS_TOKEN_INTEGER))
@@ -520,7 +516,6 @@ gtk_css_win32_size_value_token_parse (GtkCssTokenSource      *source,
       break;
     }
 
-  gtk_css_token_source_consume_whitespace (source);
   if (!gtk_css_token_is (token, GTK_CSS_TOKEN_CLOSE_PARENS))
     {
       _gtk_css_value_unref (result);
