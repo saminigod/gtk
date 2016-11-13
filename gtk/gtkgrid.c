@@ -1793,6 +1793,7 @@ gtk_grid_init (GtkGrid *grid)
                                                      gtk_grid_allocate,
                                                      NULL,
                                                      NULL,
+                                                     NULL,
                                                      NULL);
 
 

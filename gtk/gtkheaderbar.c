@@ -2069,6 +2069,7 @@ gtk_header_bar_init (GtkHeaderBar *bar)
                                                      gtk_header_bar_allocate_contents,
                                                      NULL,
                                                      NULL,
+                                                     NULL,
                                                      NULL);
 
 }
